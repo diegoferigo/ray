@@ -86,7 +86,9 @@ class FullyConnectedNetwork(TorchModelV2, nn.Module):
 
         # Layer to add the log std vars to the state-dependent means.
         if self.free_log_std and self._logits:
-            self._append_free_log_std = AppendBiasLayer(num_outputs)
+            self._append_free_log_std = AppendBiasLayer(
+                num_bias_vars=num_outputs,
+                initial_value_bias_vars=model_config.get("free_log_std_initial_value"))
 
         self._hidden_layers = nn.Sequential(*layers)
 

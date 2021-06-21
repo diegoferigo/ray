@@ -84,6 +84,9 @@ MODEL_DEFAULTS: ModelConfigDict = {
     # outputs floating bias variables instead of state-dependent. This only
     # has an effect is using the default fully connected net.
     "free_log_std": False,
+    # Initial value of the state-independent log std parameters. This only has an
+    # effect if free_log_std is True.
+    "free_log_std_initial_value": -0.5,
     # Whether to skip the final linear layer used to resize the hidden layer
     # outputs to size `num_outputs`. If True, then the last hidden layer
     # should already match num_outputs.
