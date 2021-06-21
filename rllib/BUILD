@@ -1269,6 +1269,13 @@ py_test(
 # --------------------------------------------------------------------
 
 py_test(
+    name = "tests/test_model_catalog",
+    tags = ["models"],
+    size = "small",
+    srcs = ["models/tests/test_model_catalog.py"]
+)
+
+py_test(
     name = "test_convtranspose2d_stack",
     tags = ["models"],
     size = "small",
