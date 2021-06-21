@@ -39,7 +39,8 @@ class FullyConnectedNetwork(TFModelV2):
                 "num_outputs must be divisible by two", num_outputs)
             num_outputs = num_outputs // 2
             self.log_std_var = tf.Variable(
-                [0.0] * num_outputs, dtype=tf.float32, name="log_std")
+                [model_config.get("free_log_std_initial_value")] * num_outputs,
+                dtype=tf.float32, name="log_std")
 
         # We are using obs_flat, so take the flattened shape as input.
         inputs = tf.keras.layers.Input(
