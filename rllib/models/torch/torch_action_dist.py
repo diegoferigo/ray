@@ -247,25 +247,23 @@ class _TorchSquashedGaussianBase(TorchDistributionWrapper):
         # Clip loc too, for numerical stability reasons.
         mean = torch.clamp(mean, -3, 3)
         std = torch.exp(self.log_std)
-        self.distr = torch.distributions.normal.Normal(mean, std)
-        assert len(self.distr.loc.shape) == 2
-        assert len(self.distr.scale.shape) == 2
-        assert np.all(np.less(low, high))
-        self.low = low
-        self.high = high
+        self.dist = torch.distributions.normal.Normal(mean, std)
+        assert len(self.dist.loc.shape) == 2
+        assert len(self.dist.scale.shape) == 2
+        assert np.all(np.less(self.low.detach().numpy(), self.high.detach().numpy()))
         self.mean = mean
         self.std = std
 
     @override(TorchDistributionWrapper)
     def sample(self):
-        s = self._squash(self.distr.sample())
+        s = self._squash(self.dist.sample())
         assert len(s.shape) == 2
         self.last_sample = s
         return s
 
     @override(ActionDistribution)
     def deterministic_sample(self) -> TensorType:
-        mean = self.distr.loc
+        mean = self.dist.loc
         assert len(mean.shape) == 2
         s = self._squash(mean)
         assert len(s.shape) == 2
@@ -287,7 +285,7 @@ class _TorchSquashedGaussianBase(TorchDistributionWrapper):
         assert len(x.shape) >= 2, "First dim batch, second dim variable"
         unsquashed_values = self._unsquash(x)
         # Get log prob of unsquashed values from our Normal.
-        log_prob_gaussian = self.distr.log_prob(unsquashed_values)
+        log_prob_gaussian = self.dist.log_prob(unsquashed_values)
         # For safety reasons, clamp somehow, only then sum up.
         log_prob_gaussian = torch.clamp(log_prob_gaussian, -100, 100)
         # Get log-prob for squashed Gaussian.
@@ -412,11 +410,11 @@ class TorchGaussianSquashedGaussian(_TorchSquashedGaussianBase):
         # KL(self || other) is just the KL of the two unsquashed distributions.
         assert isinstance(other, TorchGaussianSquashedGaussian)
 
-        mean = self.distr.loc
-        std = self.distr.scale
+        mean = self.dist.loc
+        std = self.dist.scale
 
-        other_mean = other.distr.loc
-        other_std = other.distr.scale
+        other_mean = other.dist.loc
+        other_std = other.dist.scale
 
         return torch.sum(
             (other.log_std - self.log_std +
@@ -426,11 +424,11 @@ class TorchGaussianSquashedGaussian(_TorchSquashedGaussianBase):
 
     def entropy(self):
         # Entropy is:
-        #   -KL(self.distr || N(0, _SCALE)) + log(high - low)
+        #   -KL(self.dist || N(0, _SCALE)) + log(high - low)
         # where the latter distribution's CDF is used to do the squashing.
 
-        mean = self.distr.loc
-        std = self.distr.scale
+        mean = self.dist.loc
+        std = self.dist.scale
 
         return torch.sum(
             torch.log(self.high - self.low) -
