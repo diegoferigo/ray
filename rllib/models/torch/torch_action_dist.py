@@ -250,7 +250,8 @@ class _TorchSquashedGaussianBase(TorchDistributionWrapper):
         self.dist = torch.distributions.normal.Normal(mean, std)
         assert len(self.dist.loc.shape) == 2
         assert len(self.dist.scale.shape) == 2
-        assert np.all(np.less(self.low.detach().numpy(), self.high.detach().numpy()))
+        assert np.all(np.less(self.low.cpu().detach().numpy(),
+                              self.high.cpu().detach().numpy()))
         self.mean = mean
         self.std = std
 
